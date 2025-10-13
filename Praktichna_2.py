@@ -37,12 +37,21 @@ for cnt in contours:
     area = cv2.contourArea(cnt)
     if area > 200:
         x, y, w, h = cv2.boundingRect(cnt)
-        hsl = np.mean(img.reshape(-1, 3), axis=0)
-        hue, s, l = hsl
+        contour_mask = np.zeros(mask_total.shape, dtype=np.uint8)
+        cv2.drawContours(contour_mask, [cnt], 0, 255, -1)
+
+        color_pixels = img[contour_mask == 255]
+
+        if len(color_pixels) > 0:
+            hsl = np.mean(color_pixels, axis=0)
+            hue, s, l = hsl
+        else:
+            hue, s, l = 0, 0, 0
+
         color = ''
-        if 0 < hue < 10 or 160 < hue< 179:
+        if 0 < hue < 10 or 160 < hue < 179:
             color = 'Red'
-        elif 26 < hue < 35:
+        elif 22 < hue < 40:
             color = 'Yellow'
         elif 101 < hue < 130:
             color = 'Blue'
@@ -78,9 +87,10 @@ for cnt in contours:
         cv2.putText(final, f'Coordinates: x = {x}, y = {y}', (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.3,(0, 0, 0), 1)
         cv2.putText(final, f'Figure: {shape}',(x, y - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.3,(0, 0, 0), 1)
         cv2.putText(final, f'S = {area}', (x, y - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 0), 1)
-        cv2.putText(final, f'{color}', (x, y - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 0), 1)
+        cv2.putText(final, f'Color: {color}', (x, y - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 0), 1)
 
 cv2.imshow('img', img)
 cv2.imshow('final', final)
+cv2.imwrite("result.jpg", final)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
