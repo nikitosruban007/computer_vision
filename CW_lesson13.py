@@ -43,7 +43,7 @@ print('Test accuracy:', test_accuracy)
 
 class_name = ['cars', 'cats', 'dogs']
 
-img = image.load_img('data/FILE_NAME', target_size=(128, 128))
+img = image.load_img('data/train/cars/car_116675.jpeg', target_size=(128, 128))
 img_array = image.img_to_array(img)
 
 img_array = img_array/255.0
