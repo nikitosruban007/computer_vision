@@ -27,7 +27,13 @@ if not cap.isOpened():
 
 model = YOLO('yolov8n.pt')
 
-CONF_THRESHOLD = 0.35
+CONF_THRESHOLD = 0.46
+
+CAT_CLASS_ID = 15
+DOG_CLASS_ID = 16
+
+seen_cats = set()
+seen_dogs = set()
 
 RESIZE_WIDTH = 960
 
@@ -50,13 +56,7 @@ while True:
 
         frame = cv2.resize(frame, (new_w, new_h))
 
-    result = model(frame, conf=CONF_THRESHOLD, verbose=False)
-
-    cat_count = 0
-    dog_count = 0
-
-    CAT_CLASS_ID = 15
-    DOG_CLASS_ID = 16
+    result = model.track(frame, conf=CONF_THRESHOLD, persist=True, verbose=False, tracker="bytetrack.yaml")
 
     for r in result:
         boxes = r.boxes
@@ -69,21 +69,25 @@ while True:
 
             x1, y1, x2, y2 = map(int, box.xyxy[0])
 
+            obj_id = int(box.id[0]) if box.id is not None else None
+
             match(cls):
                 case _ if cls == CAT_CLASS_ID:
-                    cat_count += 1
+                    if obj_id is not None:
+                        seen_cats.add(obj_id)
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 1)
                 case _ if cls == DOG_CLASS_ID:
-                    dog_count += 1
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 1)
+                    if obj_id is not None:
+                        seen_dogs.add(obj_id)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 1)
 
     now = time.time()
-    dt = now - prev_time
     prev_time = now
 
-    cv2.putText(frame, f'Cats: {cat_count}', (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
-    cv2.putText(frame, f'Dogs: {dog_count}', (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
-    cv2.putText(frame, f'Total: {cat_count + dog_count}', (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1)
+    cv2.putText(frame, f'Cats: {len(seen_cats)}', (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    cv2.putText(frame, f'Dogs: {len(seen_dogs)}', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    cv2.putText(frame, f'Total: {len(seen_cats) + len(seen_dogs)}', (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
 
 
 
